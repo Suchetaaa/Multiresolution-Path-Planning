@@ -28,7 +28,7 @@ def sparsifyGraph(M, epsilon, maxiter=20):
 
     N = np.shape(L)[0]
 
-    if not 1./np.sqrt(N) <= epsilon < 1:
+    if not 1. / np.sqrt(N) <= epsilon < 1:
         raise ValueError('sparsifyGraph: Epsilon out of required range')
 
     # Not sparse
@@ -59,7 +59,8 @@ def sparsifyGraph(M, epsilon, maxiter=20):
         C = 4 * C0
         q = round(N * np.log(N) * 9 * C**2 / (epsilon**2))
 
-        results = stats.rv_discrete(values=(np.arange(np.shape(Pe)[0]), Pe)).rvs(size=int(q))
+        results = stats.rv_discrete(
+            values=(np.arange(np.shape(Pe)[0]), Pe)).rvs(size=int(q))
         spin_counts = stats.itemfreq(results).astype(int)
         per_spin_weights = weights / (q * Pe)
 
@@ -75,19 +76,19 @@ def sparsifyGraph(M, epsilon, maxiter=20):
         if graphs.Graph(sparserW).is_connected():
             break
         elif i == maxiter - 1:
-            logger.warning('Despite attempts to reduce epsilon, sparsified graph is disconnected')
+            logger.warning(
+                'Despite attempts to reduce epsilon, sparsified graph is disconnected')
         else:
-            epsilon -= (epsilon - 1/np.sqrt(N)) / 2.
+            epsilon -= (epsilon - 1 / np.sqrt(N)) / 2.
 
     if isinstance(M, graphs.Graph):
         sparserW = sparse.diags(sparserL.diagonal(), 0) - sparserL
         sparserW = (sparserW + sparserW.T) / 2.
-        Mnew = graphs.Graph(sparserW, coords = M.coords)
+        Mnew = graphs.Graph(sparserW, coords=M.coords)
     else:
         Mnew = sparse.lil_matrix(sparserL)
 
     return Mnew
-
 
 
 # Compute the Kron Reduction
@@ -131,12 +132,11 @@ def kronReduction(G, ind):
     return Gnew
 
 
-
 # Compute a graph pyramid usung sequential Kron reduction and sparsification
 def multiresolution(G, levels, sparsify=True):
 
-    sparsify_eps = min(10. / np.sqrt(G.N), 0.3)    
-    reg_eps=0.005
+    sparsify_eps = min(10. / np.sqrt(G.N), 0.3)
+    reg_eps = 0.005
 
     G.estimate_lmax()
 
@@ -155,19 +155,21 @@ def multiresolution(G, levels, sparsify=True):
 
         Gs.append(kronReduction(Gs[i], ind))
 
-        if sparsify and Gs[i+1].N > 2:
-            Gs[i+1] = sparsifyGraph(Gs[i+1], min(max(sparsify_eps, 2. / np.sqrt(Gs[i+1].N)), 1.))
+        if sparsify and Gs[i + 1].N > 2:
+            Gs[i + 1] = sparsifyGraph(Gs[i + 1],
+                                      min(max(sparsify_eps, 2. / np.sqrt(Gs[i + 1].N)), 1.))
 
-        Gs[i+1].estimate_lmax()
+        Gs[i + 1].estimate_lmax()
 
-        Gs[i+1].mr = {'idx': ind, 'orig_idx': Gs[i].mr['orig_idx'][ind], 'level': i}
+        Gs[i + 1].mr = {'idx': ind,
+                        'orig_idx': Gs[i].mr['orig_idx'][ind], 'level': i}
 
         L_reg = Gs[i].L + reg_eps * sparse.eye(Gs[i].N)
         Gs[i].mr['K_reg'] = kronReduction(L_reg, ind)
-        Gs[i].mr['green_kernel'] = filters.Filter(Gs[i], lambda x: 1./(reg_eps + x))
+        Gs[i].mr['green_kernel'] = filters.Filter(
+            Gs[i], lambda x: 1. / (reg_eps + x))
 
     return Gs
-
 
 
 G = graphs.SwissRoll(N=1000, seed=42)
@@ -176,9 +178,10 @@ Gs = multiresolution(G, levels, sparsify=True)
 
 fig = plt.figure(figsize=(10, 2.5))
 for i in range(4):
-    ax = fig.add_subplot(1, 4, i+1, projection='3d')
-    plotting.plot_graph(Gs[i+1], ax=ax)
-    _ = ax.set_title('Pyramid Level: {} \n Number of nodes: {} \n Number of edges: {}'.format(i+1, Gs[i+1].N, Gs[i+1].Ne))
+    ax = fig.add_subplot(1, 4, i + 1, projection='3d')
+    plotting.plot_graph(Gs[i + 1], ax=ax)
+    _ = ax.set_title('Pyramid Level: {} \n Number of nodes: {} \n Number of edges: {}'.format(
+        i + 1, Gs[i + 1].N, Gs[i + 1].Ne))
     ax.set_axis_off()
 fig.tight_layout()
 plt.show()
@@ -189,9 +192,10 @@ Gs = multiresolution(G, levels, sparsify=True)
 
 fig = plt.figure(figsize=(10, 2.5))
 for i in range(4):
-    ax = fig.add_subplot(1, 4, i+1) # , projection='3d'
-    plotting.plot_graph(Gs[i+1], ax=ax)
-    _ = ax.set_title('Pyramid Level: {} \n Number of nodes: {} \n Number of edges: {}'.format(i+1, Gs[i+1].N, Gs[i+1].Ne))
+    ax = fig.add_subplot(1, 4, i + 1)  # , projection='3d'
+    plotting.plot_graph(Gs[i + 1], ax=ax)
+    _ = ax.set_title('Pyramid Level: {} \n Number of nodes: {} \n Number of edges: {}'.format(
+        i + 1, Gs[i + 1].N, Gs[i + 1].Ne))
     ax.set_axis_off()
 fig.tight_layout()
 plt.show()
